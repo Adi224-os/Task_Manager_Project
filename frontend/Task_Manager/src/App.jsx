@@ -15,9 +15,11 @@ import ViewTaskDetails from './pages/User/ViewTaskDetails';
 import MyTasks from './pages/User/MyTasks';
 
 import PrivateRoute from './routes/PrivateRoute';
+import UserProvider from './context/userContext';
 
 function App() {
   return (
+    <UserProvider>
     <div>
       <Router>
         <Routes>
@@ -39,9 +41,13 @@ function App() {
             <Route path="/user/task-details/:id" element={<ViewTaskDetails />} />
           </Route>
 
+          {/* Default Route */} 
+          <Route path="/" element={<Root />} />  
+            {/*Satrt here  */}
         </Routes>
       </Router>
     </div>
+    </UserProvider>
   )
 }
 
