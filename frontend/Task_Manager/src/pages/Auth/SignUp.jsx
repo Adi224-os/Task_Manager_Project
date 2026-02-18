@@ -1,9 +1,13 @@
-import React, { useState } from 'react'
+import React, { useCallback, useContext, useState } from 'react'
 import AuthLayout from '../../components/layouts/AuthLayout'
 import { validateEmail } from '../../utils/helper';
 import ProfilePhotoSelector from '../../components/Inputs/ProfilePhotoSelector';
 import Input from '../../components/Inputs/Input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
+import { userContext } from '../../context/userContext';
+import uploadImage from '../../utils/uploadImage';
 
 function SignUp() {
   const [profilePic, setProfilePic] = useState(null);
@@ -14,9 +18,14 @@ function SignUp() {
 
   const [error, setError] = useState(null);
 
+  const {updateUser} = useContext(userContext)
+  const navigate = useNavigate();
+
   //handle SignUp form submit
     const handleSignUp = async(e) => {
       e.preventDefault();
+
+      let profilImageUrl = '';
   
       if(!fullName) {
         setError("Please enter full name");
@@ -36,7 +45,46 @@ function SignUp() {
       setError("");
   
       //SignUp  API call
-    };
+      try {
+
+        //Upload imag if present
+        if(profilePic){
+          const imgUploadRes = await uploadImage(profilePic);
+          profilImageUrl = imgUploadRes.imageUrl || "";
+        }
+
+        const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+          name: fullName,
+          email,
+          password,
+          profilImageUrl,
+          adminInviteToken,
+        });
+
+        const {token, role} = response.data;
+
+        if(token) {
+          localStorage.setItem("token", token);
+          updateUser(response.data);
+
+          //Redirect basd on role
+          if(role === "admin"){
+            navigate("/admin/dashboard");
+          }
+          else {
+            navigate("/user/dashboard");
+          }
+        }
+      } catch(error) {
+        if(error.response && error.response.data.message){
+          setError(error.response.data.message);
+        }
+        else {
+          setError("SOmething went wrong. Please try again");
+        }
+      }
+      
+      };
 
   return (
     <AuthLayout>
